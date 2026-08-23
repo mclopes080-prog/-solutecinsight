@@ -1,0 +1,197 @@
+{
+  "name": "SolutecAI - Relatório Diário de Anomalias",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * *"
+            }
+          ]
+        }
+      },
+      "id": "a1111111-0000-4000-8000-000000000001",
+      "name": "Schedule Trigger (8h)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -80,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:5000/health",
+        "method": "GET",
+        "options": {}
+      },
+      "id": "a1111111-0000-4000-8000-000000000002",
+      "name": "Verificar Flask (health)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        140,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:5000/predict",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"data_inicio\": $now.minus({ days: 1 }).toFormat('yyyy-MM-dd'), \"data_fim\": $now.minus({ days: 1 }).toFormat('yyyy-MM-dd') } }}",
+        "options": {}
+      },
+      "id": "a1111111-0000-4000-8000-000000000003",
+      "name": "Detectar Anomalias (predict)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        360,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond-total-anomalias",
+              "leftValue": "={{ $json.total }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a1111111-0000-4000-8000-000000000004",
+      "name": "Tem anomalia?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        580,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $env.TELEGRAM_CHAT_ID }}",
+        "text": "=🚨 *SolutecAI — Anomalias Detectadas*\n📅 Data: {{ $now.minus({ days: 1 }).toFormat('yyyy-MM-dd') }}\n⚠️ Total: {{ $json.total }} anomalia(s)\n\n{{ $json.relatorio }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "a1111111-0000-4000-8000-000000000005",
+      "name": "Telegram - Alerta de Anomalias",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        800,
+        -100
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "SolutecAI Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $env.TELEGRAM_CHAT_ID }}",
+        "text": "✅ SolutecAI: Nenhuma anomalia detectada hoje.",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "a1111111-0000-4000-8000-000000000006",
+      "name": "Telegram - Tudo Normal",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        800,
+        100
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "SolutecAI Telegram Bot"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger (8h)": {
+      "main": [
+        [
+          {
+            "node": "Verificar Flask (health)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verificar Flask (health)": {
+      "main": [
+        [
+          {
+            "node": "Detectar Anomalias (predict)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detectar Anomalias (predict)": {
+      "main": [
+        [
+          {
+            "node": "Tem anomalia?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tem anomalia?": {
+      "main": [
+        [
+          {
+            "node": "Telegram - Alerta de Anomalias",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Telegram - Tudo Normal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "solutecai-dashboard"
+  }
+}
