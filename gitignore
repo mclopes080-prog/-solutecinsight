@@ -1,0 +1,33 @@
+# ─── AI / Python ───────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+venv/
+.venv/
+env/
+
+# Modelo salvo (gerado em runtime, não sobe)
+ai/modelo_treinado.pkl
+ai/*.pkl
+
+# ─── Node / TypeScript ──────────────────────────────────────
+node_modules/
+npm-debug.log*
+
+# JS compilado — sobe só o .ts, o professor compila ao vivo
+solutec/dashboard/ts/dashboard.js
+
+# ─── Banco / Credenciais ────────────────────────────────────
+*.sql.bak
+.env.local
+config.local.php
+
+# ─── Sistema ────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─── Briefing interno (não deixar o professor ver) ──────────
+CLAUDE.md
+*.claude.md
